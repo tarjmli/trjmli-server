@@ -1,31 +1,48 @@
 from fastapi import FastAPI
 import logging
-from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+import uvicorn
+from api.routes import user
+from api.routes import project
+from fastapi.middleware.cors import CORSMiddleware
+
 
 app = FastAPI()
 
 logging.basicConfig(level=logging.DEBUG, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
+class LoggerMiddleware:
+    def __init__(self, app):
+        self.app = app
 
-SQLALCHEMY_DATABASE_URL = "sqlite:///./sql_app.db"
-engine = create_engine(
-    SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
+    async def __call__(self, scope, receive, send):
+        logger.info(f"Request from {scope['client'][0]}:{scope['client'][1]} for {scope['path']}")
+
+        async def log_send(message):
+            logger.debug(f"Sent {message}")
+            await send(message)
+
+        await self.app(scope, receive, log_send)
+
+
+app.middleware("http")(LoggerMiddleware)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], 
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"], 
 )
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-Base = declarative_base()
+app.include_router(user.router , prefix="/api/v1/")
+app.include_router(project.router, prefix="/api/v1/")
 
 
-
-@app.get("/")
-async def root():
-    logger.info("Received request for /")
-    return {"message": "Hello World"}
 
 
 if __name__ == "__main__":
-    import uvicorn
+  
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
+
 
