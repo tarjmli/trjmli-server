@@ -5,7 +5,7 @@ from jose import jwt
 from requests import Session
 from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer # type: ignore
-from schema.user import User
+from models.user import User
 from db.session import SessionLocal
 from models import user
 from jose import JWTError

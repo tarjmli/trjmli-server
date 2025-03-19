@@ -14,31 +14,42 @@ g = Github(settings.GITHUB_ACCESS_TOKEN)
 class GithubManager:
     @staticmethod
     def fork_repo(repo_link: str):
+      
+     try:
        
-        try:
-            repo = g.get_repo(repo_link)
-            forked_repo = repo.create_fork()
-            print(f" Forked repo: {forked_repo.full_name}")
-            return forked_repo.full_name
-        except Exception as e:
-            print(f" Error while forking repo: {e}")
-            return None
+        if "github.com" in repo_link:
+            repo_link = repo_link.rstrip("/").split("github.com/")[-1]
+
+        repo = g.get_repo(repo_link) 
+        forked_repo = repo.create_fork()
+        print(f" Forked repo: {forked_repo.full_name}")
+        return forked_repo.full_name
+     except Exception as e:
+        print(f" Error while forking repo: {e}")
+        return None
 
     @staticmethod
     async def clone_repo(username: str, repo_name: str):
-        """Clone a public forked GitHub repository (No authentication required)."""
+      
         try:
-            repo_url = f"https://github.com/{username}/{repo_name}.git"
-            local_path = os.path.join(os.getcwd(), repo_name)
+    
+            base_path = os.path.expanduser("~/Documents")
+            local_path = os.path.join(base_path, repo_name)
 
+         
             if os.path.exists(local_path):
                 shutil.rmtree(local_path)
 
+        
+            repo_url = f"https://github.com/{username}/{repo_name}.git".rstrip("/")
+
+         
             git.Repo.clone_from(repo_url, local_path)
-            print(f"Cloned repo to {local_path}")
+            print(f"✅ Successfully cloned into {local_path}")
             return local_path
+
         except Exception as e:
-            print(f" Error while cloning repo: {e}")
+            print(f"❌ Error while cloning repo: {e}")
             return None
 
     @staticmethod

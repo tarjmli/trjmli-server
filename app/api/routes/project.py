@@ -21,7 +21,8 @@ def get_db():
 
 
 @router.get("/",  status_code=200)
-def getprojects(response_model: list[ProjectResponse], current_user: User = Depends(get_current_user), db: session = Depends(get_db))-> list[ProjectResponse]:
+def getprojects( current_user: User = Depends(get_current_user), db: session = Depends(get_db))-> list[ProjectResponse]:
+    
     projects: list[ProjectResponse]=db.query(Project).filter(Project.owner_id == current_user.id).all()
     if projects is None:
         raise HTTPException(status_code=404, detail="Project not found")
@@ -33,20 +34,29 @@ def create_project(
     current_user: User = Depends(get_current_user),
     db: session = Depends(get_db),
 ):
+    project_data.repo_url = str(project_data.repo_url)
     new_project = Project(**project_data.dict(), owner_id=current_user.id)
+    if  new_project is None:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
     
     db.add(new_project)
+    print("failed in add")
     db.commit()
+    print("failed in commit")
     db.refresh(new_project)
-
+    print("failed in refresh")
+    projet = ProjectResponse.model_validate(new_project)
+    if projet is None:
+        raise HTTPException(status_code=404, detail="Project not found")
   
-    return ProjectResponse.model_validate(new_project)
+    return projet
 
 @router.get("/trjim/{project_id}", response_model=ProjectResponse)
 async def get_project(project_id: int, current_user: User = Depends(get_current_user), db: session = Depends(get_db)):
-  
+    print("were in get project", project_id)
     project = db.query(Project).filter(Project.id == project_id).first()
-
+    print("project", project)
     if project is None or project.owner_id != current_user.id:
         raise HTTPException(status_code=404, detail="Project not found")
 
@@ -56,15 +66,19 @@ async def get_project(project_id: int, current_user: User = Depends(get_current_
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid repository URL format.")
 
-    forked_repo_name = GithubManager.fork_repo(repo_owner, repo_name)
+    print("repo_owner", repo_owner, "repo_name", repo_name)
+    forked_repo_name = GithubManager.fork_repo(project.repo_url)
     if not forked_repo_name:
         raise HTTPException(status_code=500, detail="Failed to fork repository.")
 
-  
+    print("forked_repo_name", forked_repo_name)
+   
+
     username, repo_name = forked_repo_name.split("/")
     local_path = await GithubManager.clone_repo(username, repo_name)
     if not local_path:
         raise HTTPException(status_code=500, detail="Failed to clone repository.")
+    print("local_path", local_path)
     #call the model
 
     await GithubManager.push_repo(local_path)
@@ -73,6 +87,7 @@ async def get_project(project_id: int, current_user: User = Depends(get_current_
     if not pr_url:
         raise HTTPException(status_code=500, detail="Failed to create pull request.")
 
+    print("pr_url", pr_url)
     project.pr_url = pr_url
 
     return project

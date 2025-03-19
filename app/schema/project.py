@@ -7,6 +7,7 @@ class ProjectBase(BaseModel):
     description: Optional[str] = None
     language: List[str] = []
     directory: List[str] = []
+    
 
 class ProjectCreate(ProjectBase):
     pass
