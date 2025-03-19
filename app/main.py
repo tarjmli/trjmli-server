@@ -1,8 +1,8 @@
 from fastapi import FastAPI
 import logging
 import uvicorn
-from api.routes import user
-from api.routes import project
+from api.routes import user, project
+
 from fastapi.middleware.cors import CORSMiddleware
 
 
@@ -34,8 +34,8 @@ app.add_middleware(
     allow_headers=["*"], 
 )
 
-app.include_router(user.router , prefix="/api/v1/")
-app.include_router(project.router, prefix="/api/v1/")
+app.include_router( user.router , prefix="/api/v1")
+app.include_router(project.router, prefix="/api/v1")
 
 
 

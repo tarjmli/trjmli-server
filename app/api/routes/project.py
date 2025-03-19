@@ -10,7 +10,7 @@ from service.github_service import GithubManager
 from core.config import settings
 
 
-project = APIRouter(prefix="/project")
+router = APIRouter(prefix="/project")
 def get_db():
    db = SessionLocal()
    try:
@@ -20,14 +20,14 @@ def get_db():
 
 
 
-@project.get("/",  status_code=200)
+@router.get("/",  status_code=200)
 def getprojects(response_model: list[ProjectResponse], current_user: User = Depends(get_current_user), db: session = Depends(get_db))-> list[ProjectResponse]:
     projects: list[ProjectResponse]=db.query(Project).filter(Project.owner_id == current_user.id).all()
     if projects is None:
         raise HTTPException(status_code=404, detail="Project not found")
     print ("were in project")
     return projects
-@project.post("/", response_model=ProjectResponse, status_code=201)
+@router.post("/", response_model=ProjectResponse, status_code=201)
 def create_project(
     project_data: ProjectCreate,  
     current_user: User = Depends(get_current_user),
@@ -42,7 +42,7 @@ def create_project(
   
     return ProjectResponse.model_validate(new_project)
 
-@project.get("/trjim/{project_id}", response_model=ProjectResponse)
+@router.get("/trjim/{project_id}", response_model=ProjectResponse)
 async def get_project(project_id: int, current_user: User = Depends(get_current_user), db: session = Depends(get_db)):
   
     project = db.query(Project).filter(Project.id == project_id).first()

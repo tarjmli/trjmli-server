@@ -10,7 +10,7 @@ from core.security import hash_password, verify_password, create_access_token
 from core.config import settings
 from core.security import get_current_user
 
-user = APIRouter(prefix="/auth")
+router = APIRouter(prefix="/auth")
 
 
 def get_db():
@@ -21,7 +21,7 @@ def get_db():
         db.close()
 
 
-@user.post("/signup", response_model=UserResponse)
+@router.post("/signup", response_model=UserResponse)
 def signup(user_data: UserCreate, db: Session = Depends(get_db)):
     existing_user = db.query(User).filter(User.email == user_data.email).first()
     if existing_user:
@@ -36,7 +36,7 @@ def signup(user_data: UserCreate, db: Session = Depends(get_db)):
     return new_user
 
 
-@user.post("/login")
+@router.post("/login")
 def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == form_data.username).first()
     if not user or not verify_password(form_data.password, user.hashed_password):
@@ -49,7 +49,7 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
     return {"access_token": access_token, "token_type": "bearer"}
 
 
-@user.get("/protected")
+@router.get("/protected")
 def protected_route(current_user: User = Depends(get_current_user)):
     return {"message": "Access granted", "user": current_user.email}
 
