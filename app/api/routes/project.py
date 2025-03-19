@@ -2,10 +2,10 @@ from fastapi import APIRouter, Depends, HTTPException
 from db import session
 from db.session import SessionLocal
 from models.project import Project
-from schema.user import 
+from schema.user import  User
 
 from core.security import get_current_user
-from schema.project import ProjectResponse
+from schema.project import ProjectCreate, ProjectResponse
 from service.github_service import GithubManager
 from core.config import settings
 
@@ -18,17 +18,29 @@ def get_db():
    finally:
        db.close()
 
-@project.get("/")
-def getprojects(response_model: list[ProjectResponse], current_user: User = Depends(get_current_user), db: session = Depends(get_db)):
-    return db.query(Project).filter(Project.owner_id == current_user.id).all(), 200
-@project.post("/")
-def create_project(project_data: Project, current_user: User = Depends(get_current_user), db: session = Depends(get_db)):
+
+
+@project.get("/",  status_code=200)
+def getprojects(response_model: list[ProjectResponse], current_user: User = Depends(get_current_user), db: session = Depends(get_db))-> list[ProjectResponse]:
+    projects: list[ProjectResponse]=db.query(Project).filter(Project.owner_id == current_user.id).all()
+    if projects is None:
+        raise HTTPException(status_code=404, detail="Project not found")
+    print ("were in project")
+    return projects
+@project.post("/", response_model=ProjectResponse, status_code=201)
+def create_project(
+    project_data: ProjectCreate,  
+    current_user: User = Depends(get_current_user),
+    db: session = Depends(get_db),
+):
     new_project = Project(**project_data.dict(), owner_id=current_user.id)
+    
     db.add(new_project)
     db.commit()
     db.refresh(new_project)
-    return new_project , 201
 
+  
+    return ProjectResponse.model_validate(new_project)
 
 @project.get("/trjim/{project_id}", response_model=ProjectResponse)
 async def get_project(project_id: int, current_user: User = Depends(get_current_user), db: session = Depends(get_db)):

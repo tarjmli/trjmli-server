@@ -5,7 +5,7 @@ from jose import jwt
 from requests import Session
 from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer # type: ignore
-
+from schema.user import User
 from db.session import SessionLocal
 from models import user
 from jose import JWTError
@@ -37,7 +37,7 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
     return encoded_jwt
-def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> User:
  
     try:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
@@ -45,11 +45,10 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
         if email is None:
             raise HTTPException(status_code=401, detail="Invalid token")
 
-        user = db.query(user).filter(user.email == email).first()
+        user = db.query(User).filter(User.email == email).first()
         if user is None:
             raise HTTPException(status_code=401, detail="User not found")
-
-        return user
+        return User(email=user.email, id=user.id)
 
     except JWTError:
         raise HTTPException(status_code=401, detail="Could not validate credentials")

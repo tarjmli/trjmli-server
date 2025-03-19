@@ -13,7 +13,7 @@ class ProjectCreate(ProjectBase):
 
 class ProjectResponse(ProjectBase):
     id: int
-    owner_id: int
+ 
 
     class Config:
         from_attributes = True

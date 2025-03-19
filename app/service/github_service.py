@@ -7,7 +7,7 @@ import git
 
 from core.config import settings
 
-
+print(settings.GITHUB_ACCESS_TOKEN)
 g = Github(settings.GITHUB_ACCESS_TOKEN)
 
 
