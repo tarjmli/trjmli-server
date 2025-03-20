@@ -272,7 +272,6 @@ module.exports = {{
 """
 
 
-# Main function to process files and generate translations
 async def process_components(
     api_key: str, 
     component_dir: str, 
@@ -281,38 +280,50 @@ async def process_components(
     languages: List[str] = ["en", "ar", "fr"],
     file_extensions: List[str] = [".jsx", ".tsx", ".js", ".ts"]
 ):
+    # Ensure component_dir exists
+    if not os.path.exists(component_dir):
+        print(f"Error: Component directory '{component_dir}' does not exist.")
+        return
+    if not os.path.isdir(component_dir):
+        print(f"Error: '{component_dir}' is not a directory.")
+        return
+
     if output_dir is None:
         output_dir = os.path.join(component_dir, "i18n_output")
+
     
-    # Create output directory
     os.makedirs(output_dir, exist_ok=True)
     locales_dir = os.path.join(output_dir, "locales")
     os.makedirs(locales_dir, exist_ok=True)
-    
+
     # Initialize extractor
     extractor = I18nExtractor()
-    
+
     # Find all component files
     component_files = []
+    print(f"Scanning directory: {component_dir}")
+    
     for root, _, files in os.walk(component_dir):
+        print(f"Checking directory: {root}")  # Debugging output
         for file in files:
+            print(f"Found file: {file}")  # Debugging output
             if any(file.endswith(ext) for ext in file_extensions):
                 component_files.append(os.path.join(root, file))
-    
+
     if not component_files:
-        print(f"No {', '.join(file_extensions)} files found in {component_dir}")
+        print(f"Error: No {', '.join(file_extensions)} files found in {component_dir}")
         return
-    
+
     print(f"Found {len(component_files)} component files")
+
     
-    # Process each file to extract strings
     all_strings = {}
     for file_path in component_files:
         print(f"\nProcessing {os.path.basename(file_path)}...")
         updated_code, extracted_strings = await extractor.process_file(file_path, framework)
         
         if "error" not in extracted_strings:
-            # Save updated component
+          
             rel_path = os.path.relpath(file_path, component_dir)
             output_file_path = os.path.join(output_dir, rel_path)
             os.makedirs(os.path.dirname(output_file_path), exist_ok=True)
@@ -321,21 +332,21 @@ async def process_components(
                 await f.write(updated_code)
             print(f"Updated component saved to {output_file_path}")
             
-            # Merge extracted strings
+           
             all_strings.update(extracted_strings)
-    
+
     if not all_strings:
         print("No translatable strings were extracted.")
         return
-    
+
     print(f"\nExtracted {len(all_strings)} translatable strings")
+
     
-    # Save English strings (source language)
     en_path = os.path.join(locales_dir, "en.json")
     async with aiofiles.open(en_path, 'w', encoding='utf-8') as f:
         await f.write(json.dumps(all_strings, indent=2, ensure_ascii=False))
     print(f"English strings saved to {en_path}")
-    
+
     # Translate to other languages
     translations = {"en": all_strings}
     for lang in languages:
@@ -343,26 +354,24 @@ async def process_components(
             translated_strings = await extractor.translate_strings(all_strings, lang)
             if "error" not in translated_strings:
                 translations[lang] = translated_strings
-                
+
                 # Save translated strings
                 lang_path = os.path.join(locales_dir, f"{lang}.json")
                 async with aiofiles.open(lang_path, 'w', encoding='utf-8') as f:
                     await f.write(json.dumps(translated_strings, indent=2, ensure_ascii=False))
                 print(f"{lang.capitalize()} strings saved to {lang_path}")
-    
+
     # Generate i18n configuration file
     config = extractor.generate_i18n_config(languages, framework)
     config_filename = "next-i18next.config.js" if framework == "Next" else "i18n.js"
     config_path = os.path.join(output_dir, config_filename)
-    
+
     async with aiofiles.open(config_path, 'w', encoding='utf-8') as f:
         await f.write(config)
     print(f"\ni18n configuration saved to {config_path}")
-    
+
     print("\nI18n processing complete!")
     print(f"All output files are in: {output_dir}")
-
-# Command line interface
 async def automate(output_dir: str, component_dir: List[str], framework: str, languages: List[str]):
     api_key ="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"
     component_dir = component_dir

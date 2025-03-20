@@ -88,7 +88,10 @@ async def get_project(project_id: int, current_user: User = Depends(get_current_
     if isinstance(component_dir, list):
         component_dir = "/".join(component_dir)  
     print("I18nextProvider:", I18nextProvider) 
-
+    print("component_dir", component_dir)
+  
+    local_path = local_path+"/"+component_dir
+    print("local_path", local_path)
     await autom.automate(local_path, component_dir, framework, project.language)
     print("automate")
     
