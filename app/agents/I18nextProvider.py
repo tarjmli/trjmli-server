@@ -9,7 +9,7 @@ import i18n from "./i18n";"""
 EXCLUDED_DIRS = {"node_modules", ".next", "dist", "build", "out"}  # Ignore these directories
 
 class SyntaxFixer:
-    API_KEY = "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"  
+    API_KEY =   os.getenv("GROQ_API_KEY")
 
     def __init__(self, model_name="llama-3.3-70b-versatile"):
         self.chat = ChatGroq(
