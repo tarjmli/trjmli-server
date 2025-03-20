@@ -33,7 +33,7 @@ class GithubManager:
       
         try:
     
-            base_path = os.path.expanduser("~/Documents")
+            base_path = os.path.expanduser("~/Documents/ez")
             local_path = os.path.join(base_path, repo_name)
 
          

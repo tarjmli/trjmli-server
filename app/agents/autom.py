@@ -294,7 +294,9 @@ async def process_components(
     
     # Find all component files
     component_files = []
+    print('slm',component_dir, os.walk(component_dir))
     for root, _, files in os.walk(component_dir):
+        print(dict(files=files))
         for file in files:
             if any(file.endswith(ext) for ext in file_extensions):
                 component_files.append(os.path.join(root, file))
@@ -339,6 +341,7 @@ async def process_components(
     # Translate to other languages
     translations = {"en": all_strings}
     for lang in languages:
+        print(lang, 'slt')
         if lang != "en":
             translated_strings = await extractor.translate_strings(all_strings, lang)
             if "error" not in translated_strings:
@@ -364,16 +367,19 @@ async def process_components(
 
 # Command line interface
 async def automate(output_dir: str, component_dir: List[str], framework: str, languages: List[str]):
+
+
+
+    print(dict(output_dir=output_dir, component_dir=component_dir, languages=languages))
     api_key ="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"
-    component_dir = component_dir
-    output_dir = output_dir
     framework = "react" 
     languages = languages
     extensions = [".jsx", ".tsx", ".js", ".ts"]
-    
+    abs_path = os.path.join(output_dir, component_dir)
+    print(dict(abs_path=abs_path))
     await process_components(
         api_key=api_key,
-        component_dir=component_dir,
+        component_dir=abs_path,
         output_dir=output_dir,
         framework=framework,
         languages=languages,

@@ -24,7 +24,7 @@ def get_db():
 
 @router.get("/",  status_code=200)
 def getprojects( current_user: User = Depends(get_current_user), db: session = Depends(get_db))-> list[ProjectResponse]:
-    
+
     projects: list[ProjectResponse]=db.query(Project).filter(Project.owner_id == current_user.id).all()
     if projects is None:
         raise HTTPException(status_code=404, detail="Project not found")
@@ -88,6 +88,8 @@ async def get_project(project_id: int, current_user: User = Depends(get_current_
     if isinstance(component_dir, list):
         component_dir = "/".join(component_dir)  
     print("I18nextProvider:", I18nextProvider) 
+
+    print(dict(local_path=local_path, component_dir=component_dir))
 
     await autom.automate(local_path, component_dir, framework, project.language)
     print("automate")
