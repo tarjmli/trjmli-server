@@ -1,3 +1,4 @@
+from agents import I18nextProvider
 from fastapi import APIRouter, Depends, HTTPException
 from db import session
 from db.session import SessionLocal
@@ -8,6 +9,7 @@ from core.security import get_current_user
 from schema.project import ProjectCreate, ProjectResponse
 from service.github_service import GithubManager
 from core.config import settings
+from agents import autom
 
 
 router = APIRouter(prefix="/project")
@@ -35,6 +37,7 @@ def create_project(
     db: session = Depends(get_db),
 ):
     project_data.repo_url = str(project_data.repo_url)
+    print(project_data.language)
     new_project = Project(**project_data.dict(), owner_id=current_user.id)
     if  new_project is None:
         raise HTTPException(status_code=404, detail="Project not found")
@@ -51,11 +54,10 @@ def create_project(
         raise HTTPException(status_code=404, detail="Project not found")
   
     return projet
-
 @router.get("/trjim/{project_id}", response_model=ProjectResponse)
 async def get_project(project_id: int, current_user: User = Depends(get_current_user), db: session = Depends(get_db)):
     print("were in get project", project_id)
-    project = db.query(Project).filter(Project.id == project_id).first()
+    project: Project = db.query(Project).filter(Project.id == project_id).first()
     print("project", project)
     if project is None or project.owner_id != current_user.id:
         raise HTTPException(status_code=404, detail="Project not found")
@@ -72,14 +74,27 @@ async def get_project(project_id: int, current_user: User = Depends(get_current_
         raise HTTPException(status_code=500, detail="Failed to fork repository.")
 
     print("forked_repo_name", forked_repo_name)
-   
-
+    
     username, repo_name = forked_repo_name.split("/")
     local_path = await GithubManager.clone_repo(username, repo_name)
     if not local_path:
         raise HTTPException(status_code=500, detail="Failed to clone repository.")
     print("local_path", local_path)
-    #call the model
+
+    framework = "React"
+    
+ 
+    component_dir = project.directory
+    if isinstance(component_dir, list):
+        component_dir = "/".join(component_dir)  
+    print("I18nextProvider:", I18nextProvider) 
+
+    await autom.automate(local_path, component_dir, framework, project.language)
+    print("automate")
+    
+    hey= I18nextProvider.modify_main_file(local_path)
+    print(hey)
+    
 
     await GithubManager.push_repo(local_path)
 
@@ -91,6 +106,3 @@ async def get_project(project_id: int, current_user: User = Depends(get_current_
     project.pr_url = pr_url
 
     return project
-    
-    
-    

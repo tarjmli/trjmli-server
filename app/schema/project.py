@@ -5,7 +5,7 @@ class ProjectBase(BaseModel):
     name: str
     repo_url: HttpUrl
     description: Optional[str] = None
-    language: List[str] = []
+    language: List[str] 
     directory: List[str] = []
     
 
